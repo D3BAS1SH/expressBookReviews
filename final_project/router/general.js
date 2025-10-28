@@ -37,21 +37,32 @@ public_users.get('/', async function (req, res) {
 });
 
 
-// ✅ Extra endpoint — returns the books directly (for Axios to call)
+// returns the books directly (for Axios to call)
 public_users.get('/booksdata', (req, res) => {
   return res.status(200).json(books);
 });
 
 // Get book details based on ISBN
-public_users.get('/isbn/:isbn', function (req, res) {
-  // Retrieve ISBN from request parameters
+public_users.get('/isbn/:isbn', async function (req, res) {
   const isbn = req.params.isbn;
 
-  // Check if the book exists in the database
-  if (books[isbn]) {
-    return res.status(200).send(JSON.stringify(books[isbn], null, 4));
-  } else {
-    return res.status(404).json({ message: "Book not found" });
+  try {
+    // Fetch all books first
+    const response = await axios.get('http://localhost:5000/booksdata');
+    const allBooks = response.data;
+
+    // Check if the given ISBN exists
+    if (allBooks[isbn]) {
+      return res.status(200).json(allBooks[isbn]);
+    } else {
+      return res.status(404).json({ message: "Book not found for given ISBN" });
+    }
+
+  } catch (error) {
+    return res.status(500).json({
+      message: "Error fetching book details",
+      error: error.message
+    });
   }
 });
   
